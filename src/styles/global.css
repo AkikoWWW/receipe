@@ -215,3 +215,28 @@ button.primary {
   justify-content: space-between;
   align-items: center;
 }
+
+.step-label-text {
+  color: var(--primary) !important;
+  font-weight: 800;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  display: block;
+  border-bottom: 1px solid #eef2ff;
+  width: fit-content;
+}
+
+.step-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 2rem;
+  padding-left: 1rem;
+  border-left: 3px solid var(--primary);
+}
+
+.step-body {
+  padding-top: 4px;
+}
