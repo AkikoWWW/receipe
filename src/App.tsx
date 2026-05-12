@@ -64,21 +64,6 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <div className="mobile-tabs">
-        <button 
-          className={activeTab === 'edit' ? 'active' : ''} 
-          onClick={() => setActiveTab('edit')}
-        >
-          Редагування
-        </button>
-        <button 
-          className={activeTab === 'view' ? 'active' : ''} 
-          onClick={() => setActiveTab('view')}
-        >
-          Перегляд
-        </button>
-      </div>
-
       <main className={`main-layout ${activeTab}`}>
         <section className="editor-section">
           <Editor recipe={recipe} setRecipe={setRecipe} />
