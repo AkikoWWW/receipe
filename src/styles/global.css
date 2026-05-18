@@ -240,3 +240,18 @@ button.primary {
 .step-body {
   padding-top: 4px;
 }
+
+input.input-error {
+  border-color: var(--danger) !important;
+  background-color: #fef2f2 !important;
+}
+
+.ingredient-checkbox-label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #e5e7eb;
+}
+.ingredient-checkbox-label.disabled:hover {
+  background: #e5e7eb;
+  border-color: var(--border);
+}

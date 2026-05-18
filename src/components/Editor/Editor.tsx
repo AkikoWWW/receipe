@@ -11,7 +11,7 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
     const newIng: Ingredient = { 
       id: crypto.randomUUID(), 
       name: '', 
-      amount: 0, 
+      amount: 1,
       unit: 'г' 
     };
     setRecipe(prev => ({ ...prev, ingredients: [...prev.ingredients, newIng] }));
@@ -20,28 +20,29 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
   const updateIngredient = (id: string, data: Partial<Ingredient>) => {
     setRecipe(prev => ({
       ...prev,
-      ingredients: prev.ingredients.map(ing => ing.id === id ? { ...ing, ...data } : ing)
-    }));
-  };
-
-  const removeIngredient = (id: string) => {
-    setRecipe(prev => ({
-      ...prev,
-      ingredients: prev.ingredients.filter(ing => ing.id !== id),
-      steps: prev.steps.map(step => ({
-        ...step,
-        ingredientIds: step.ingredientIds.filter(ingId => ingId !== id)
-      }))
+      ingredients: prev.ingredients.map(ing => {
+        if (ing.id !== id) return ing;
+        
+        const updated = { ...ing, ...data };
+        
+        if (data.amount !== undefined && data.amount <= 0) {
+          updated.amount = 1;
+        }
+        
+        return updated;
+      })
     }));
   };
 
   const addStep = () => {
+    
     const newStep: RecipeStep = { 
       id: crypto.randomUUID(), 
       description: '', 
       timerSeconds: null, 
       ingredientIds: [] 
     };
+
     setRecipe(prev => ({ ...prev, steps: [...prev.steps, newStep] }));
   };
 
@@ -49,13 +50,6 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
     setRecipe(prev => ({
       ...prev,
       steps: prev.steps.map(step => step.id === id ? { ...step, ...data } : step)
-    }));
-  };
-
-  const removeStep = (id: string) => {
-    setRecipe(prev => ({
-      ...prev,
-      steps: prev.steps.filter(step => step.id !== id)
     }));
   };
 
@@ -69,7 +63,7 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
       />
       
       <div className="servings-control">
-        <label>Кількість порцій (база):</label>
+        <label>Порції:</label>
         <input 
           type="number" 
           value={recipe.servings} 
@@ -83,27 +77,32 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
         {recipe.ingredients.map(ing => (
           <div key={ing.id} className="row">
             <input 
-              placeholder="Назва"
+              placeholder="Назва (обов'язково)"
               value={ing.name} 
+              className={ing.name.trim() === '' ? 'input-error' : ''}
               onChange={e => updateIngredient(ing.id, { name: e.target.value })} 
             />
             <input 
               type="number" 
+              min="0.1"
+              step="any"
               placeholder="К-ть"
               value={ing.amount || ''} 
               onChange={e => updateIngredient(ing.id, { amount: Number(e.target.value) })} 
             />
-            <select 
+           
+           <select 
               value={ing.unit} 
               onChange={e => updateIngredient(ing.id, { unit: e.target.value as Unit })}
             >
+              
               <option value="г">г</option>
               <option value="мл">мл</option>
               <option value="шт">шт</option>
               <option value="ч.л.">ч.л.</option>
               <option value="ст.л.">ст.л.</option>
             </select>
-            <button className="btn-delete" onClick={() => removeIngredient(ing.id)}>✕</button>
+            <button onClick={() => setRecipe(prev => ({ ...prev, ingredients: prev.ingredients.filter(i => i.id !== ing.id) }))}>✕</button>
           </div>
         ))}
         <button className="btn-add" onClick={addIngredient}>+ Додати інгредієнт</button>
@@ -115,40 +114,52 @@ export const Editor: React.FC<Props> = ({ recipe, setRecipe }) => {
           <div key={step.id} className="step-editor">
             <div className="step-header">
               <span>Крок {index + 1}</span>
-              <button className="btn-delete" onClick={() => removeStep(step.id)}>Видалити</button>
+              <button onClick={() => setRecipe(prev => ({ ...prev, steps: prev.steps.filter(s => s.id !== step.id) }))}>Видалити</button>
             </div>
             <textarea 
-              placeholder="Опис кроку..."
+              placeholder="Що робити..."
               value={step.description}
               onChange={e => updateStep(step.id, { description: e.target.value })}
             />
+            
             <div className="step-actions">
-              <input 
+               <input 
                 type="number" 
                 placeholder="Таймер (сек)"
+                min="1"
                 value={step.timerSeconds || ''}
-                onChange={e => updateStep(step.id, { timerSeconds: e.target.value ? Number(e.target.value) : null })}
+                onChange={e => updateStep(step.id, { timerSeconds: e.target.value ? Math.max(1, Number(e.target.value)) : null })}
               />
+
               <div className="ingredient-select">
-              <p>Використовувані інгредієнти:</p>
-              <div className="ingredient-grid">
-                {recipe.ingredients.map(ing => (
-                  <label key={ing.id} className="ingredient-checkbox-label"> 
-                    <input 
-                      type="checkbox"
-                      checked={step.ingredientIds.includes(ing.id)}
-                      onChange={e => {
-                        const newIds = e.target.checked 
-                          ? [...step.ingredientIds, ing.id]
-                          : step.ingredientIds.filter(id => id !== ing.id);
-                        updateStep(step.id, { ingredientIds: newIds });
-                      }}
-                    />
-                    <span>{ing.name || 'Без назви'}</span>
-                  </label>
-                ))}
+                <p>Використовувані інгредієнти:</p>
+                <div className="ingredient-grid">
+                  {recipe.ingredients.map(ing => {
+                    const isSelected = step.ingredientIds.includes(ing.id);
+                    const isDisabled = ing.name.trim() === '';
+                    
+                    return (
+                      <label 
+                        key={ing.id} 
+                        className={`ingredient-checkbox-label ${isSelected ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                      >
+                        <input 
+                          type="checkbox"
+                          disabled={isDisabled}
+                          checked={isSelected && !isDisabled}
+                          onChange={e => {
+                            const newIds = e.target.checked 
+                              ? [...step.ingredientIds, ing.id]
+                              : step.ingredientIds.filter(id => id !== ing.id);
+                            updateStep(step.id, { ingredientIds: newIds });
+                          }}
+                        />
+                        <span>{ing.name || 'Пуста назва'}</span>
+                      </label>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
             </div>
           </div>
         ))}
